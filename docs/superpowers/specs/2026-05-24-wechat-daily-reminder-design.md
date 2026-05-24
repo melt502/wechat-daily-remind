@@ -79,13 +79,13 @@ Cron(07:00 CST) ──> Worker.run(daily) ── 遍历用户 ── 组装文�
 
 ### 5.3 `store.ts`
 - 屏蔽 KV 细节，对外暴露：
-  - `addReminder(openid, reminder)`
+  - `addReminder(openid, reminder)`（首次写入时自动把 OpenID 加进 `users:index`）
   - `listReminders(openid, fromDate, toDate)`
   - `deleteReminder(openid, indexOrId)`
   - `markPushed(openid, reminderIds, dateISO)`
   - `getSettings(openid)` / `setSettings(openid, patch)`
   - `purgeOlderThan(openid, days=30)`
-  - `listAllOpenIds()`（cron 用）
+  - `listAllOpenIds()`（cron 用，读 `users:index`）
 - 提醒条目结构：
 
 ```ts
@@ -96,7 +96,7 @@ type Reminder = {
   occursAt: string;      // ISO，单次提醒；重复提醒该字段为创建时间
   repeat?: { type: 'weekly' | 'monthly' | 'daily'; spec: string };
   createdAt: string;
-  pushedDates: string[]; // 已推过的日期
+  pushedDates: string[]; // 已推过的日期；单次提醒推送后会进 history 字段、原条目删除；重复提醒留住此字段用于幂等防止同日重复推
 };
 ```
 
@@ -216,9 +216,11 @@ token 用 KV 共享而非 Worker 内存（Worker 无状态、isolate 不固定�
 
 ### 6.4 重复提醒展开
 
-- 创建时存 `repeat: { type, spec }`，不复制为多条。
-- 推送当天比对规则（今日是周几 / 几号）→ 命中则放入"今日列表"，**不修改原条目**。
-- 重复提醒永不进 history，永久保留直到用户主动删。
+- 创建时存 `repeat: { type, spec }`，**不**复制为多条。
+- 推送当天比对规则（今日是周几 / 几号）→ 命中则放入"今日列表"。
+- 推送成功后，把 `today` 加进该重复条目的 `pushedDates`，作幂等保护（同日多次 cron 触发不会重复推）。
+- 重复提醒永不进 history、永不被 purge，永久保留直到用户主动删。
+- 单次提醒推送成功后从 `reminders` 中移除、转入 `history`。
 
 ## 7. KV Schema
 
@@ -278,7 +280,7 @@ token 用 KV 共享而非 Worker 内存（Worker 无状态、isolate 不固定�
 1. `pnpm test` 全绿
 2. `wrangler dev` 本地跑通签名 + 加提醒 + 列表
 3. `wrangler deploy --dry-run` 无报错
-4. 部署后手动触发 `wrangler trigger`，确认收到推送
+4. 部署后通过 wrangler 手动触发一次 cron（`wrangler dev --test-scheduled` 或在 dashboard 上 Trigger Event），确认收到推送
 
 ## 10. 0 成本边界
 
