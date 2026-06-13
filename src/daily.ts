@@ -201,6 +201,7 @@ export async function runDaily(
   for (const openid of openIds) {
     try {
       const settings = await store.getSettings(redis, openid);
+      await store.purgeExpiredOneTimeReminders(redis, openid, `${dateStr}T${String(Math.floor(nowMinutes / 60)).padStart(2, "0")}:${String(nowMinutes % 60).padStart(2, "0")}:00`);
       const pushMinutes = parseClockMinutes(settings.pushAt);
       if (nowMinutes < pushMinutes || nowMinutes > pushMinutes + DAILY_PUSH_WINDOW_MINUTES) {
         summary.skippedNotInWindow += 1;
@@ -275,6 +276,7 @@ export async function runPrePush(
 
   for (const openid of openIds) {
     try {
+      await store.purgeExpiredOneTimeReminders(redis, openid, `${dateStr}T${String(Math.floor(nowMinutes / 60)).padStart(2, "0")}:${String(nowMinutes % 60).padStart(2, "0")}:00`);
       const allReminders = await store.listReminders(redis, openid);
       const todayReminders = expandRepeatReminders(allReminders, dateStr);
       const alreadyPrePushed = await store.getPrePushedIds(redis, openid, dateStr);

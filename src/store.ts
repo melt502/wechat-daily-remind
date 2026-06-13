@@ -184,6 +184,30 @@ export async function purgeOlderThan(
   await redis.set(historyKey(openid), filtered);
 }
 
+export async function purgeExpiredOneTimeReminders(
+  redis: Redis,
+  openid: string,
+  nowISO: string,
+): Promise<number> {
+  const key = remindersKey(openid);
+  const existing = await redis.get<Reminder[]>(key);
+  if (!existing) return 0;
+
+  const today = nowISO.slice(0, 10);
+  const filtered = existing.filter((r) => {
+    if (r.repeat) return true;
+    const date = r.occursAt.slice(0, 10);
+    const time = r.occursAt.slice(11, 16);
+    if (time === "00:00") return date >= today;
+    return r.occursAt >= nowISO;
+  });
+  const removed = existing.length - filtered.length;
+  if (removed > 0) {
+    await redis.set(key, filtered);
+  }
+  return removed;
+}
+
 export async function listAllOpenIds(redis: Redis): Promise<string[]> {
   const existing = await redis.get<string[]>(USERS_INDEX);
   return existing ?? [];

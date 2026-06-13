@@ -139,6 +139,35 @@ describe("store", () => {
     expect(found!.pushedDates.filter((d) => d === "2026-05-25").length).toBe(1);
   });
 
+  it("purges expired one-time reminders but keeps repeating reminders", async () => {
+    const oldOneTime = await store.addReminder(redis, openid, {
+      text: "过期单次提醒",
+      occursAt: "2026-05-25T09:00:00",
+    });
+    const futureOneTime = await store.addReminder(redis, openid, {
+      text: "未来单次提醒",
+      occursAt: "2026-05-26T09:00:00",
+    });
+    const repeat = await store.addReminder(redis, openid, {
+      text: "周期提醒",
+      occursAt: "2026-05-20T09:00:00",
+      repeat: { type: "daily", spec: "" },
+    });
+    const todayNoTime = await store.addReminder(redis, openid, {
+      text: "今天无具体时间提醒",
+      occursAt: "2026-05-25T00:00:00",
+    });
+
+    const removed = await store.purgeExpiredOneTimeReminders(redis, openid, "2026-05-25T10:00:00");
+
+    expect(removed).toBe(1);
+    const reminders = await store.listReminders(redis, openid);
+    expect(reminders.find((r) => r.id === oldOneTime.id)).toBeUndefined();
+    expect(reminders.find((r) => r.id === futureOneTime.id)).toBeDefined();
+    expect(reminders.find((r) => r.id === repeat.id)).toBeDefined();
+    expect(reminders.find((r) => r.id === todayNoTime.id)).toBeDefined();
+  });
+
   it("purges old history entries", async () => {
     await store.purgeOlderThan(redis, openid, 30);
     expect(true).toBe(true);

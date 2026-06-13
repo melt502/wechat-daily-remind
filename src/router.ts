@@ -219,6 +219,7 @@ async function processMessage(
     }
 
     case "list": {
+      await store.purgeExpiredOneTimeReminders(redis, openid, currentLocalOccursAt());
       const reminders = await store.listReminders(redis, openid);
       const filtered = filterReminders(reminders, command.payload.range, command.payload.date);
       return formatListReply(greeting, labelForRange(command.payload.range, command.payload.date), filtered);
@@ -327,4 +328,12 @@ function toDateString(date: Date): string {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
+}
+
+function currentLocalOccursAt(): string {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, "0");
+  const m = String(now.getMinutes()).padStart(2, "0");
+  const s = String(now.getSeconds()).padStart(2, "0");
+  return `${toDateString(now)}T${h}:${m}:${s}`;
 }
