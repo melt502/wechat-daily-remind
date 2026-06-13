@@ -1,0 +1,28 @@
+{
+  "name": "wechat-daily-reminder",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "cf-typegen": "wrangler types",
+    "build:scf": "tsc -p tsconfig.scf.json",
+    "pack:scf": "node scripts/pack-scf.mjs"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.38.0",
+    "lunar-javascript": "^1.7.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250524.0",
+    "archiver": "^8.0.0",
+    "miniflare": "^3.20250524.0",
+    "typescript": "^5.7.0",
+    "vercel": "^54.4.1",
+    "vitest": "^2.1.0",
+    "wrangler": "^4.94.0"
+  }
+}

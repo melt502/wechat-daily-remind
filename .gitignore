@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.npm-cache/
+*.local.toml
+
+.vercel
+
+# SCF compiled output
+scf-main.js
+src/**/*.js
+src/**/*.js.map
+scf-deploy.zip

@@ -1,0 +1,10 @@
+name = "wechat-daily-reminder"
+main = "src/index.ts"
+compatibility_date = "2026-05-24"
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[[kv_namespaces]]
+binding = "KV"
+id = "f29e9392b34f4a6b9cb588d148778f5d"
