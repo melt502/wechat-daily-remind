@@ -290,8 +290,9 @@ async function executePendingAction(redis: Redis, openid: string, action: Pendin
 function filterReminders(reminders: Reminder[], range: ListRange, date?: string): Reminder[] {
   const now = new Date();
   const today = toDateString(now);
-  if (range === "all") return [...reminders].sort(byOccursAt);
-  if (range === "recent") return [...reminders].sort(byOccursAt).slice(0, 10);
+  const active = reminders.filter((r) => isActiveReminder(r, today));
+  if (range === "all") return active.sort(byOccursAt);
+  if (range === "recent") return active.sort(byOccursAt).slice(0, 10);
   if (range === "date") return reminders.filter((r) => reminderMatchesDate(r, date ?? today)).sort(byOccursAt);
   if (range === "today") return reminders.filter((r) => reminderMatchesDate(r, today)).sort(byOccursAt);
   if (range === "tomorrow") {
@@ -302,10 +303,14 @@ function filterReminders(reminders: Reminder[], range: ListRange, date?: string)
   const end = new Date(now);
   end.setDate(end.getDate() + 7);
   const endStr = toDateString(end);
-  return reminders.filter((r) => {
+  return active.filter((r) => {
     const d = r.occursAt.slice(0, 10);
     return d >= today && d <= endStr;
   }).sort(byOccursAt);
+}
+
+function isActiveReminder(reminder: Reminder, today: string): boolean {
+  return Boolean(reminder.repeat) || reminder.occursAt.slice(0, 10) >= today;
 }
 
 function reminderMatchesDate(reminder: Reminder, date: string): boolean {

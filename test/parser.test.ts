@@ -101,6 +101,7 @@ describe("parser", () => {
     expect(parse("查看明天")).toEqual({ kind: "list", payload: { range: "tomorrow" } });
     expect(parse("查看本周")).toEqual({ kind: "list", payload: { range: "week" } });
     expect(parse("查看全部")).toEqual({ kind: "list", payload: { range: "all" } });
+    expect(parse("查看提醒")).toEqual({ kind: "list", payload: { range: "recent" } });
     expect(parse("最近提醒")).toEqual({ kind: "list", payload: { range: "recent" } });
   });
 

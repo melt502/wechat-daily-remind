@@ -401,10 +401,10 @@ function parseListRange(rest: string): Command {
   if (/明天/.test(rest)) return { kind: "list", payload: { range: "tomorrow" } };
   if (/本周|这周|一周/.test(rest)) return { kind: "list", payload: { range: "week" } };
   if (/全部|所有/.test(rest)) return { kind: "list", payload: { range: "all" } };
-  if (/最近|近期/.test(rest)) return { kind: "list", payload: { range: "recent" } };
+  if (/最近|近期|提醒/.test(rest)) return { kind: "list", payload: { range: "recent" } };
   const date = parseDateFromText(rest, new Date());
   if (date) return { kind: "list", payload: { range: "date", date: toISO(date) } };
-  return { kind: "list", payload: { range: "today" } };
+  return { kind: "list", payload: { range: "recent" } };
 }
 
 export function parse(input: string): Command {
