@@ -115,6 +115,18 @@ describe("parser", () => {
     }
   });
 
+  it("parses Chinese ordinal indexes for update and delete", () => {
+    const update = parse("修改第一条为明天下午3点交作业");
+    expect(update.kind).toBe("update");
+    if (update.kind === "update") {
+      expect(update.payload.index).toBe(1);
+      expect(update.payload.next.text).toBe("交作业");
+    }
+
+    const del = parse("删除第二条");
+    expect(del).toEqual({ kind: "delete", payload: { index: 2 } });
+  });
+
   it("adds ambiguity metadata for missing time", () => {
     const result = parse("提醒我交作业");
     expect(result.kind).toBe("add");

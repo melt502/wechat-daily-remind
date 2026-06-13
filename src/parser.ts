@@ -407,6 +407,18 @@ function parseListRange(rest: string): Command {
   return { kind: "list", payload: { range: "recent" } };
 }
 
+function parseChineseIndex(raw: string): number | null {
+  const s = raw.trim();
+  if (/^\d+$/.test(s)) return Number(s);
+  const map: Record<string, number> = { 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 };
+  if (s === "十") return 10;
+  if (s.startsWith("十")) return 10 + (map[s.slice(1)] ?? 0);
+  if (s.endsWith("十")) return (map[s.slice(0, -1)] ?? 0) * 10;
+  const ten = s.match(/^([一二两三四五六七八九])十([一二三四五六七八九])$/);
+  if (ten) return (map[ten[1]] ?? 0) * 10 + (map[ten[2]] ?? 0);
+  return map[s] ?? null;
+}
+
 export function parse(input: string): Command {
   const text = input.trim();
 
@@ -416,9 +428,10 @@ export function parse(input: string): Command {
 
   if (UPDATE_WORDS.test(text)) {
     const rest = text.replace(UPDATE_WORDS, "").trim();
-    const m = rest.match(/^第?\s*(\d+)\s*条?\s*(?:为|改为|成|改成)?\s*(.+)$/);
+    const m = rest.match(/^第?\s*(\d+|[一二两三四五六七八九十]+)\s*条?\s*(?:为|改为|成|改成)?\s*(.+)$/);
     if (m) {
-      return { kind: "update", payload: { index: +m[1], next: toParsedReminder(parseFullInput(m[2])) } };
+      const index = parseChineseIndex(m[1]);
+      if (index !== null) return { kind: "update", payload: { index, next: toParsedReminder(parseFullInput(m[2])) } };
     }
     return { kind: "help" };
   }
@@ -434,9 +447,10 @@ export function parse(input: string): Command {
 
   if (DELETE_WORDS.test(text)) {
     const rest = text.replace(DELETE_WORDS, "").trim();
-    const idx = rest.match(/^第?\s*(\d+)\s*条?/);
+    const idx = rest.match(/^第?\s*(\d+|[一二两三四五六七八九十]+)\s*条?/);
     if (idx) {
-      return { kind: "delete", payload: { index: +idx[1] } };
+      const index = parseChineseIndex(idx[1]);
+      if (index !== null) return { kind: "delete", payload: { index } };
     }
     return { kind: "help" };
   }
